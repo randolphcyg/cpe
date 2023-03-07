@@ -7,10 +7,12 @@ import (
 )
 
 var (
-	ErrCPENonstandard    = errors.New("the CPE string specified does not conform to the CPE 2.2 or 2.3 specification")
-	ErrCPEStrEmptyOrNull = errors.New("CPE String is null ir empty")
-	ErrInvalidPart       = errors.New("CPE String contains a invalid part!")
-	ErrInvalidCPE        = errors.New("Invalid CPE")
+	ErrCPENonstandard               = errors.New("the CPE string specified does not conform to the CPE 2.2 or 2.3 specification")
+	ErrCPEStrEmptyOrNull            = errors.New("CPE String is null ir empty")
+	ErrInvalidPart                  = errors.New("CPE String contains a invalid part!")
+	ErrInvalidPartTooManyComponents = errors.New("CPE String contains a invalid part!too many components.")
+	ErrInvalidPartTooFewComponents  = errors.New("CPE String contains a invalid part!too few components.")
+	ErrInvalidCPE                   = errors.New("Invalid CPE")
 )
 
 // CPE represents a Common Platform Enumeration
@@ -80,7 +82,7 @@ func parseCPE22(cpeString string) (cpe *CPE, err error) {
 	}
 	parts := strings.Split(cpeString, ":")
 	if len(parts) <= 1 || len(parts) > 8 {
-		return cpe, errors.WithMessage(ErrInvalidCPE, "too many components")
+		return cpe, ErrInvalidPartTooManyComponents
 	}
 	if len(parts[1]) != 2 {
 		return cpe, ErrInvalidPart
@@ -174,71 +176,71 @@ func parseCPE23(cpeString string) (cpe *CPE, err error) {
 			return cpe, ErrInvalidPart
 		}
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Vendor = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Product = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Version = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Update = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Edition = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Language = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.SwEdition = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.TargetSw = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.TargetHw = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
 		cpe.Other = iter.Next()
 	} else {
-		return cpe, nil
+		return cpe, ErrInvalidPartTooFewComponents
 	}
 
 	if iter.HasNext() {
-		return cpe, errors.WithMessage(ErrInvalidCPE, "too many components")
+		return cpe, ErrInvalidPartTooManyComponents
 	}
 
 	return cpe, nil

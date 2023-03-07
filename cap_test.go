@@ -100,3 +100,15 @@ func TestInvalidCpe23Part(t *testing.T) {
 	_, err := cpe.ParseCPE(cpeString)
 	assert.Equal(t, cpe.ErrInvalidPart, err)
 }
+
+func TestInvalidCpe23TooFewParts(t *testing.T) {
+	cpeString := "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*"
+	_, err := cpe.ParseCPE(cpeString)
+	assert.Equal(t, cpe.ErrInvalidPartTooFewComponents, err)
+}
+
+func TestInvalidCpe23TooManyParts(t *testing.T) {
+	cpeString := "cpe:2.3:a:vendor:product:1.0:*:*:*:*:*:*:*:*"
+	_, err := cpe.ParseCPE(cpeString)
+	assert.Equal(t, cpe.ErrInvalidPartTooManyComponents, err)
+}
