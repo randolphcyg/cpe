@@ -2,9 +2,15 @@ package cpe
 
 import (
 	"strings"
-	"unicode/utf8"
 
 	"github.com/pkg/errors"
+)
+
+var (
+	ErrCPENonstandard    = errors.New("the CPE string specified does not conform to the CPE 2.2 or 2.3 specification")
+	ErrCPEStrEmptyOrNull = errors.New("CPE String is null ir empty")
+	ErrInvalidPart       = errors.New("CPE String contains a invalid part!")
+	ErrInvalidCPE        = errors.New("Invalid CPE")
 )
 
 // CPE represents a Common Platform Enumeration
@@ -39,27 +45,9 @@ func NewCPE() *CPE {
 	}
 }
 
-func regionMatchs(srcStr string, ignoreCase bool, toffset int, other string, ooffset int, len int) bool {
-	if ignoreCase {
-		srcStr = strings.ToLower(srcStr)
-		other = strings.ToLower(other)
-	}
-
-	var strTmp string
-	if toffset+len <= utf8.RuneCountInString(srcStr) {
-		strTmp = srcStr[toffset : toffset+len]
-	}
-
-	if other[ooffset:] == strTmp {
-		return true
-	}
-
-	return false
-}
-
 // ParseCPE
 /**
- *  Parses a CPE String into an object with the option of parsing CPE 2.2 URI
+ * Parses a CPE String into an object with the option of parsing CPE 2.2 URI
  * strings in lenient mode - allowing for CPE values that do not adhere to
  * the specification.
  *
@@ -67,15 +55,15 @@ func regionMatchs(srcStr string, ignoreCase bool, toffset int, other string, oof
  * @return the CPE object represented by the given cpeString
  * @throws error thrown if the cpeString is invalid
  */
-func ParseCPE(cpeString string) (CPE, error) {
+func ParseCPE(cpeString string) (cpe *CPE, err error) {
 	if cpeString == "" {
-		return CPE{}, errors.New("CPE String is null and cannot be parsed")
-	} else if regionMatchs(cpeString, false, 0, "cpe:/", 0, 5) {
+		return cpe, ErrCPEStrEmptyOrNull
+	} else if RegionMatches(cpeString, false, 0, "cpe:/", 0, 5) {
 		return parseCPE22(cpeString)
-	} else if regionMatchs(cpeString, false, 0, "cpe:2.3:", 0, 8) {
+	} else if RegionMatches(cpeString, false, 0, "cpe:2.3:", 0, 8) {
 		return parseCPE23(cpeString)
 	} else {
-		return CPE{}, errors.New("the CPE string specified does not conform to the CPE 2.2 or 2.3 specification")
+		return cpe, ErrCPENonstandard
 	}
 }
 
@@ -86,42 +74,47 @@ func ParseCPE(cpeString string) (CPE, error) {
  * @return the CPE object represented by the cpeString
  * @throws error thrown if the cpeString is invalid
  */
-func parseCPE22(cpeString string) (CPE, error) {
+func parseCPE22(cpeString string) (cpe *CPE, err error) {
 	if cpeString == "" {
-		return CPE{}, errors.New("CPE String is null ir enpty - unable to parse")
+		return cpe, ErrCPEStrEmptyOrNull
 	}
 	parts := strings.Split(cpeString, ":")
 	if len(parts) <= 1 || len(parts) > 8 {
-		return CPE{}, errors.New("CPE String is invalid - too many components specified: " + cpeString)
+		return cpe, errors.WithMessage(ErrInvalidCPE, "too many components")
 	}
 	if len(parts[1]) != 2 {
-		return CPE{}, errors.New("CPE String contains a malformed part: " + cpeString)
+		return cpe, ErrInvalidPart
 	}
-	cpe := NewCPE()
-	cpe.Part = strings.TrimLeft(parts[1], "/")
+
+	cpe = NewCPE()
+	cpe.Part = cpeUriToWellFormed(parts[1])
+	if cpe.Part == "" {
+		return cpe, ErrInvalidPart
+	}
 	if len(parts) > 2 {
-		cpe.Vendor = strings.TrimRight(parts[2], "/")
+		cpe.Vendor = cpeUriToWellFormed(parts[2])
 	}
 	if len(parts) > 3 {
-		cpe.Product = strings.TrimRight(parts[3], "/")
+		cpe.Product = cpeUriToWellFormed(parts[3])
 	}
 	if len(parts) > 4 {
-		cpe.Version = strings.TrimRight(parts[4], "/")
+		cpe.Version = cpeUriToWellFormed(parts[4])
 	}
 	if len(parts) > 5 {
-		cpe.Update = strings.TrimRight(parts[5], "/")
+		cpe.Update = cpeUriToWellFormed(parts[5])
 	}
 	if len(parts) > 6 {
-		err := cpe.unpackEdition(strings.TrimRight(parts[6], "/"))
+		edition := cpeUriToWellFormed(parts[6])
+		err = cpe.unpackEdition(edition)
 		if err != nil {
-			return CPE{}, err
+			return cpe, err
 		}
 	}
 	if len(parts) > 7 {
-		cpe.Language = strings.TrimRight(parts[7], "/")
+		cpe.Language = cpeUriToWellFormed(parts[7])
 	}
 
-	return *cpe, nil
+	return cpe, nil
 }
 
 /**
@@ -164,86 +157,89 @@ func (cpe *CPE) unpackEdition(edition string) error {
 	return nil
 }
 
-func parseCPE23(cpeString string) (CPE, error) {
+func parseCPE23(cpeString string) (cpe *CPE, err error) {
 	if cpeString == "" {
-		return CPE{}, errors.New("CPE String is null ir enpty - unable to parse")
+		return cpe, ErrCPEStrEmptyOrNull
 	}
 	iter := Cpe23PartIterator{}
-	err := iter.Cpe23PartIterator(cpeString)
+	err = iter.Cpe23PartIterator(cpeString)
 	if err != nil {
-		return CPE{}, err
+		return cpe, err
 	}
 
-	cpe := NewCPE()
+	cpe = NewCPE()
 	if iter.HasNext() {
 		cpe.Part = iter.Next()
+		if !IsPart(cpe.Part) {
+			return cpe, ErrInvalidPart
+		}
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Vendor = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Product = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Version = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Update = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Edition = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Language = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.SwEdition = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.TargetSw = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.TargetHw = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
 		cpe.Other = iter.Next()
 	} else {
-		return *cpe, nil
+		return cpe, nil
 	}
 
 	if iter.HasNext() {
-		return CPE{}, errors.New("Invalid CPE (too many components): " + cpeString)
+		return cpe, errors.WithMessage(ErrInvalidCPE, "too many components")
 	}
 
-	return *cpe, nil
+	return cpe, nil
 }
