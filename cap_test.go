@@ -3,8 +3,9 @@ package cpe_test
 import (
 	"testing"
 
-	"github.com/randolphcyg/cpe"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/randolphcyg/cpe"
 )
 
 func TestParseCPE22_1(t *testing.T) {
