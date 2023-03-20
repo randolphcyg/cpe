@@ -58,7 +58,7 @@ func NewCPE() *CPE {
  * @throws error thrown if the cpeString is invalid
  */
 func ParseCPE(cpeString string) (cpe *CPE, err error) {
-	if cpeString == "" {
+	if len(cpeString) == 0 {
 		return cpe, ErrCPEStrEmptyOrNull
 	} else if RegionMatches(cpeString, false, 0, "cpe:/", 0, 5) {
 		return parseCPE22(cpeString)
@@ -77,12 +77,12 @@ func ParseCPE(cpeString string) (cpe *CPE, err error) {
  * @throws error thrown if the cpeString is invalid
  */
 func parseCPE22(cpeString string) (cpe *CPE, err error) {
-	if cpeString == "" {
+	if len(cpeString) == 0 {
 		return cpe, ErrCPEStrEmptyOrNull
 	}
 	parts := strings.Split(cpeString, ":")
 	if len(parts) <= 1 || len(parts) > 8 {
-		return cpe, ErrInvalidPartTooManyComponents
+		return cpe, ErrInvalidCPE
 	}
 	if len(parts[1]) != 2 {
 		return cpe, ErrInvalidPart
@@ -90,7 +90,7 @@ func parseCPE22(cpeString string) (cpe *CPE, err error) {
 
 	cpe = NewCPE()
 	cpe.Part = cpeUriToWellFormed(parts[1])
-	if cpe.Part == "" {
+	if len(cpe.Part) == 0 {
 		return cpe, ErrInvalidPart
 	}
 	if len(parts) > 2 {
@@ -128,7 +128,7 @@ func parseCPE22(cpeString string) (cpe *CPE, err error) {
  * @param cpe a reference to the CPE Builder to unpack the edition into
  */
 func (cpe *CPE) unpackEdition(edition string) error {
-	if edition == "" {
+	if len(edition) == 0 {
 		return errors.New("edition is null")
 	}
 
@@ -160,9 +160,10 @@ func (cpe *CPE) unpackEdition(edition string) error {
 }
 
 func parseCPE23(cpeString string) (cpe *CPE, err error) {
-	if cpeString == "" {
+	if len(cpeString) == 0 {
 		return cpe, ErrCPEStrEmptyOrNull
 	}
+
 	iter := Cpe23PartIterator{}
 	err = iter.Cpe23PartIterator(cpeString)
 	if err != nil {

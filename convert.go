@@ -8,17 +8,18 @@ import (
 )
 
 func cpeUriToWellFormed(value string) string {
-	if value == "" {
+	switch {
+	case len(value) == 0:
 		return ""
-	} else if strings.HasPrefix(value, "/") { // part value
-		ret := strings.TrimLeft(value, "/")
+	case value[0] == '/':
+		ret := value[1:]
 		if !IsPart(ret) {
 			return ""
 		}
 		return ret
-	} else if strings.HasSuffix(value, "/") {
-		return strings.TrimRight(value, "/")
-	} else {
+	case value[len(value)-1] == '/':
+		return value[:len(value)-1]
+	default:
 		return value
 	}
 }
