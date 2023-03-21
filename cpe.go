@@ -6,9 +6,15 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	FlagCpe22 = "cpe:/"
+	FlagCpe23 = "cpe:2.3:"
+)
+
 var (
 	ErrCPENonstandard               = errors.New("the CPE string specified does not conform to the CPE 2.2 or 2.3 specification")
 	ErrCPEStrEmptyOrNull            = errors.New("CPE String is null ir empty")
+	ErrCPEEmptyOrNull               = errors.New("CPE struct is null ir empty")
 	ErrInvalidPart                  = errors.New("CPE String contains a invalid part!")
 	ErrInvalidPartTooManyComponents = errors.New("CPE String contains a invalid part!too many components.")
 	ErrInvalidPartTooFewComponents  = errors.New("CPE String contains a invalid part!too few components.")
@@ -47,6 +53,14 @@ func NewCPE() *CPE {
 	}
 }
 
+func (cpe *CPE) IsCPENil() bool {
+	if cpe == nil {
+		return true
+	} else {
+		return false
+	}
+}
+
 // ParseCPE
 /**
  * Parses a CPE String into an object with the option of parsing CPE 2.2 URI
@@ -60,9 +74,9 @@ func NewCPE() *CPE {
 func ParseCPE(cpeString string) (cpe *CPE, err error) {
 	if len(cpeString) == 0 {
 		return cpe, ErrCPEStrEmptyOrNull
-	} else if RegionMatches(cpeString, false, 0, "cpe:/", 0, 5) {
+	} else if RegionMatches(cpeString, false, 0, FlagCpe22, 0, len(FlagCpe22)) {
 		return parseCPE22(cpeString)
-	} else if RegionMatches(cpeString, false, 0, "cpe:2.3:", 0, 8) {
+	} else if RegionMatches(cpeString, false, 0, FlagCpe23, 0, len(FlagCpe23)) {
 		return parseCPE23(cpeString)
 	} else {
 		return cpe, ErrCPENonstandard
@@ -245,4 +259,37 @@ func parseCPE23(cpeString string) (cpe *CPE, err error) {
 	}
 
 	return cpe, nil
+}
+
+func (cpe *CPE) ToCPE22Str() (cpeString string, err error) {
+	if cpe.IsCPENil() {
+		return "", ErrCPEEmptyOrNull
+	}
+	if len(cpe.Part) == 0 {
+		return "", ErrInvalidPart
+	}
+	cpeString = FlagCpe22
+	cpeString += cpe.Part
+
+	if len(cpe.Vendor) > 0 {
+		cpeString += ":" + cpe.Vendor
+	}
+	if len(cpe.Product) > 0 {
+		cpeString += ":" + cpe.Product
+	}
+	if len(cpe.Version) > 0 {
+		cpeString += ":" + cpe.Version
+	}
+	if len(cpe.Update) > 0 {
+		cpeString += ":" + cpe.Update
+	}
+	if len(cpe.Edition) > 0 {
+		cpeString += ":" + cpe.Edition
+	}
+	if len(cpe.Language) > 0 {
+		cpeString += ":" + cpe.Language
+	}
+	cpeString += "/"
+
+	return cpeString, nil
 }

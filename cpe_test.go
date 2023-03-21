@@ -8,6 +8,30 @@ import (
 	"github.com/randolphcyg/cpe"
 )
 
+func TestFlagCpe(t *testing.T) {
+	assert.Equal(t, 5, len(cpe.FlagCpe22))
+	assert.Equal(t, 8, len(cpe.FlagCpe23))
+}
+
+func TestParseCPE22ToStr(t *testing.T) {
+	c := cpe.CPE{
+		Part:      "a",
+		Vendor:    "hiox_india",
+		Product:   "guest_book",
+		Version:   "4.0",
+		Update:    "",
+		Edition:   "",
+		Language:  "",
+		SwEdition: "",
+		TargetSw:  "",
+		TargetHw:  "",
+		Other:     "",
+	}
+	cpeStr, _ := c.ToCPE22Str()
+	res := "cpe:/a:hiox_india:guest_book:4.0/"
+	assert.Equal(t, res, cpeStr)
+}
+
 func TestParseCPE22_1(t *testing.T) {
 	cpeString := "cpe:/a:hiox_india:guest_book:4.0/"
 	c, err := cpe.ParseCPE(cpeString)
