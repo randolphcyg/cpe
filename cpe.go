@@ -1,6 +1,7 @@
 package cpe
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -53,12 +54,8 @@ func NewCPE() *CPE {
 	}
 }
 
-func (cpe *CPE) IsCPENil() bool {
-	if cpe == nil {
-		return true
-	} else {
-		return false
-	}
+func (cpe *CPE) IsEmpty() bool {
+	return reflect.DeepEqual(cpe, CPE{})
 }
 
 // ParseCPE
@@ -262,7 +259,7 @@ func parseCPE23(cpeString string) (cpe *CPE, err error) {
 }
 
 func (cpe *CPE) ToCPE22Str() (cpeString string, err error) {
-	if cpe.IsCPENil() {
+	if cpe.IsEmpty() {
 		return "", ErrCPEEmptyOrNull
 	}
 	if len(cpe.Part) == 0 {
