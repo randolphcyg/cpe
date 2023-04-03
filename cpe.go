@@ -22,40 +22,34 @@ var (
 	ErrInvalidCPE                   = errors.New("Invalid CPE")
 )
 
+type ICPE interface {
+	IsEmpty() bool
+	unpackEdition(edition string) error
+	ToCPE22Str() (cpeString string, err error)
+}
+
 // CPE represents a Common Platform Enumeration
 type CPE struct {
-	Part     string
-	Vendor   string
-	Product  string
-	Version  string
-	Update   string
-	Edition  string
-	Language string
+	Part     string `json:"part"`
+	Vendor   string `json:"vendor,omitempty"`
+	Product  string `json:"product,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Update   string `json:"update,omitempty"`
+	Edition  string `json:"edition,omitempty"`
+	Language string `json:"language,omitempty"`
 	// New field in CPE 2.3
-	SwEdition string
-	TargetSw  string
-	TargetHw  string
-	Other     string
+	SwEdition string `json:"sw_edition,omitempty"`
+	TargetSw  string `json:"target_sw,omitempty"`
+	TargetHw  string `json:"target_hw,omitempty"`
+	Other     string `json:"other,omitempty"`
 }
 
 func NewCPE() *CPE {
-	return &CPE{
-		Part:      "",
-		Vendor:    "",
-		Product:   "",
-		Version:   "",
-		Update:    "",
-		Edition:   "",
-		Language:  "",
-		SwEdition: "",
-		TargetSw:  "",
-		TargetHw:  "",
-		Other:     "",
-	}
+	return &CPE{}
 }
 
 func (cpe *CPE) IsEmpty() bool {
-	return reflect.DeepEqual(cpe, CPE{})
+	return reflect.DeepEqual(cpe, &CPE{})
 }
 
 // ParseCPE
