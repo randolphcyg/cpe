@@ -38,9 +38,9 @@ type CPE struct {
 	Edition  string `json:"edition,omitempty"`
 	Language string `json:"language,omitempty"`
 	// New field in CPE 2.3
-	SwEdition string `json:"sw_edition,omitempty"`
-	TargetSw  string `json:"target_sw,omitempty"`
-	TargetHw  string `json:"target_hw,omitempty"`
+	SwEdition string `json:"swEdition,omitempty"`
+	TargetSw  string `json:"targetSw,omitempty"`
+	TargetHw  string `json:"targetHw,omitempty"`
 	Other     string `json:"other,omitempty"`
 }
 
